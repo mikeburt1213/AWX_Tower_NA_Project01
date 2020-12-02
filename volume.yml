@@ -1,13 +1,13 @@
 - hosts: localhost
-  name: ONTAP
+  name: Volume_Create
   gather_facts: false
   vars:
-    hostname: "172.32.0.152"
-    volname: ansibleVolume
-    vserver: ansible_vserver
+    hostname:
+    volname:
+    vserver:
     aggrname:
-    size: 10
-    aggr: aggr1
+    size:
+    aggr:
     e_policy: 
     qos_policy:
     export_policy:
