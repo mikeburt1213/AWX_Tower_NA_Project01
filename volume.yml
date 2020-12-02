@@ -21,7 +21,7 @@
       size: "{{ size }}"
       size_unit: gb
       policy: "{{ export_policy }}"
-      junction_path: "/{{ vol_name }}"
+      junction_path: "/{{ volname }}"
       space_guarantee: "none"
       vserver: "{{ vserver }}"
       hostname: "{{ hostname }}"
