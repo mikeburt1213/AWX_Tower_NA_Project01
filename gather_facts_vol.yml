@@ -1,0 +1,68 @@
+###############################################################################
+##
+## File Name:    gather_facts_vol.yml
+## Date Created: 2019_July_17
+## Author:       Jim Robertson
+## Email:        james.robertson@netapp.com
+##
+## Description:
+##  - This playbook will gather and display specific information about a
+##    single defined volume.
+##
+## v1.0 - 07/17/2019 - Jim Robertson - Original Script
+##
+##
+###############################################################################
+
+---
+- hosts: localhost
+  name: Get Volume info
+  vars_files:
+    ../variables/creds.yml
+  vars:
+    # use alias for variable
+    input: &input
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+      https: "{{ https }}"
+    vol_name: "ansibleVol"
+  tasks:
+  - name: Gather OnTap Facts
+    na_ontap_gather_facts:
+      <<: *input
+      state: info
+
+  - name: "Print Cluster {{ hostname.split('.')[0] }} Facts"
+    debug:
+      msg: "{{ ontap_facts }}"
+
+  - name: "Create Volume {{ vol_name }} Facts"
+    set_fact:
+      volume_facts: "{{ volume_facts|default({}) | combine({item.key.split(':')[0]: item.value}) }}"
+    loop: "{{ q('dict', ontap_facts.volume_info) }}"
+    loop_control:
+      label: "{{ item.value.volume_id_attributes.name }}"
+    when:
+      - vol_name is defined
+      - item.value.volume_id_attributes.name == vol_name
+#      - item.value.volume_id_attributes.name.startswith("{{ mnemonic }}")
+
+  - name: "Print All Volume {{ vol_name }} Facts"
+    debug:
+      msg: "{{ volume_facts }}"
+
+  - name: "Create Volume {{ vol_name }} Parsed Facts"
+    set_fact:
+      volume_parsed_facts: "{{ volume_parsed_facts|default({}) | combine({item.key: item.value}) }}"
+    loop:
+      - { key: 'Volume', value: "{{ vol_name }}"}
+      - { key: 'Aggregate', value: "{{ volume_facts[vol_name].volume_id_attributes.containing_aggregate_name }}" }
+      - { key: 'SizeGB', value: "{{ volume_facts[vol_name].volume_space_attributes.size | int / 1024 / 1024 / 1024 }}" }
+      - { key: 'AvailableGB', value: "{{ volume_facts[vol_name].volume_space_attributes.size_available | int / 1024 / 1024 / 1024 }}" }
+      - { key: 'UsedGB', value: "{{ volume_facts[vol_name].volume_space_attributes.size_used | int / 1024 / 1024 / 1024 }}" }
+
+  - name: "Print Volume {{ vol_name }} Parsed Facts"
+    debug:
+      msg: "{{ volume_parsed_facts }}"
