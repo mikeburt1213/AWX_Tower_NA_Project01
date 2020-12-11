@@ -1,0 +1,45 @@
+###############################################################################
+##
+## File Name:    template.yml
+## Date Created: 2019_July_17
+## Author:       Jim Robertson
+## Email:        james.robertson@netapp.com
+##
+## Description:
+##  - This playbook finds a volume that starts with the given mnemonic and
+##    assigns it to a variable.
+##    NOTE: if there are multiple matches, it only returns the last match
+##
+## v1.0 - 07/17/2019 - Jim Robertson - Original Script
+##
+##
+###############################################################################
+
+---
+- hosts: localhost
+  name: Get NetApp info
+  vars_files:
+    ../variables/creds.yml
+  vars:
+    # use alias for variable
+    input: &input
+      hostname: "{{ hostname }}"
+      username: "{{ username }}"
+      password: "{{ password }}"
+      validate_certs: "{{ validate_certs }}"
+      https: "{{ https }}"
+    mnemonic: "ansible"
+  tasks:
+  - name: Gather facts
+    na_ontap_gather_facts:
+      state: info
+      <<: *input
+  - name: Assign Volume Name to a Variable
+    set_fact:
+      volume_name: "{{ ontap_facts.volume_info[item].volume_id_attributes.name }}"
+    with_items: "{{ ontap_facts.volume_info }}"
+    when:
+    - ontap_facts.volume_info[item].volume_id_attributes.name
+    - item.startswith("{{ mnemonic }}")
+  - debug:
+      var: volume_name
